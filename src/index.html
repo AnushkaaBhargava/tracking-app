@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font (optional, but good for consistent typography) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font family globally */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- React and ReactDOM CDN -->
+    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX transformation in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        // Define colors directly within the component as an object
+        const colors = {
+          primaryBlue: '#2563eb', // A strong blue, typically for primary actions/elements
+          primaryBlueHover: '#1d4ed8', // Darker blue for hover states
+          lightBlue: '#eff6ff',    // Very light blue, good for backgrounds or subtle accents
+          lighterBlue: '#bfdbfe', // A slightly darker light blue, for borders or rings
+          darkGray: '#1f2937',     // Dark gray for headings and main text
+          mediumGray: '#4b5563',   // Medium gray for secondary text
+          lightGray: '#f9fafb',    // Very light gray for backgrounds of elements
+          borderGray: '#e5e7eb',   // Light gray for borders
+          errorRed: '#ef4444',     // Red for error messages
+          errorRedBg: '#fee2e2',   // Light red for error backgrounds
+          errorRedBorder: '#f87171', // Red for error borders
+        };
+
+        // Main App component which will render the ShipmentTracker
+        function App() {
+          return (
+            // The background gradient is now applied directly using Tailwind classes.
+            // The font-sans class sets the default font to a generic sans-serif,
+            // which aligns with common web app practices and implicitly uses 'Inter' if available
+            // and configured in a global CSS setup for Tailwind.
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 font-sans">
+              <ShipmentTracker />
+            </div>
+          );
+        }
+
+        // TrackingTimeline component to display the tracking report in a bulleted list
+        function TrackingTimeline({ trackingReport }) {
+          // Sort the tracking report by date and time in descending order (most recent first)
+          const sortedReport = [...trackingReport].sort((a, b) => {
+            // Ensure ScanDetail exists before attempting to access properties
+            const dateA = a.ScanDetail?.ScanDateTime ? new Date(a.ScanDetail.ScanDateTime) : new Date(0);
+            const dateB = b.ScanDetail?.ScanDateTime ? new Date(b.ScanDetail.ScanDateTime) : new Date(0);
+            return dateB - dateA;
+          });
+
+          return (
+            <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Shipment History</h3>
+              {sortedReport.length > 0 ? (
+                <ul className="space-y-4">
+                  {sortedReport.map((entry, index) => {
+                    // Check if ScanDetail and Instructions/ScanDateTime exist for safer rendering
+                    if (!entry.ScanDetail || !entry.ScanDetail.Instructions || !entry.ScanDetail.ScanDateTime) {
+                      return null; // Skip invalid entries
+                    }
+
+                    const date = new Date(entry.ScanDetail.ScanDateTime);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    });
+                    const formattedTime = date.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+
+                    return (
+                      <li key={index} className="relative flex items-center">
+                        {/* The timeline dot styling is now applied directly using Tailwind classes and inline style for colors */}
+                        <div
+                          className="absolute w-2 h-2 rounded-full -left-1.5 ring-4"
+                          style={{ backgroundColor: colors.primaryBlue, borderColor: colors.lighterBlue }}
+                        ></div>
+                        <div className="flex-1 ml-4 p-3 border border-gray-200 rounded-md bg-gray-50">
+                          <p className="text-gray-900 font-semibold">{entry.ScanDetail.Instructions}</p>
+                          <p className="text-sm text-gray-600">{formattedDate} at {formattedTime}</p>
+                          {entry.ScanDetail.ScannedLocation && (
+                            <p className="text-xs text-gray-500">Location: {entry.ScanDetail.ScannedLocation}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-gray-600">No detailed tracking history available.</p>
+              )}
+            </div>
+          );
+        }
+
+        // ShipmentTracker component responsible for tracking and displaying shipment information
+        function ShipmentTracker() {
+          const [loading, setLoading] = React.useState(false);
+          const [error, setError] = React.useState('');
+          const [trackingReport, setTrackingReport] = React.useState([]);
+          const [status, setStatus] = React.useState(null);
+
+          // Define the backend URL from environment variables.
+          // In a real application, ensure process.env.REACT_APP_BACKEND_URL is properly configured.
+          // For this example, we'll use a placeholder if it's not defined.
+          const backendUrl = typeof process !== 'undefined' && process.env.REACT_APP_BACKEND_URL
+            ? process.env.REACT_APP_BACKEND_URL
+            : 'https://your-backend-api.com/'; // Placeholder URL
+
+          const handleTrackShipment = async () => {
+            const pid = localStorage.getItem('pId');
+            if (!pid) {
+              localStorage.setItem('pId', 'DEMO_ORDER_123');
+              setError('Order ID not found in localStorage. Using a dummy ID for demonstration.');
+              return;
+            }
+
+            try {
+              setLoading(true);
+              setError('');
+              setTrackingReport([]);
+              setStatus(null);
+
+              // --- Start of Simulated API Response (using data from FainalProduct.pdf) ---
+              const simulatedResult = await new Promise(resolve => setTimeout(() => {
+                // This is a simplified version of the provided JSON for demonstration
+                // In a real app, you would fetch from your backend.
+                if (pid === 'DEMO_ORDER_123') {
+                  return {
+                    success: true,
+                    data: {
+                      "tracking Report": [
+                        { "ScanDetail": { "ScanDateTime": "2025-05-17T11:20:57.979", "Instructions": "Manifest uploaded", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-17T13:16:45", "Instructions": "Shipment picked up", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-17T17:59:26.703", "Instructions": "Shipment Recieved at Origin Center", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-17T18:00:18.38", "Instructions": "Added to Bag", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T10:30:12.57", "Instructions": "Bag Added To Trip", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T11:44:51.626", "Instructions": "Vehicle Departed", "Scanned Location": "Roorkee_Dc (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T13:40:19.756", "Instructions": "Trip Arrived", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T13:59:25.05", "Instructions": "Bag Received at Facility", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T15:35:39.421", "Instructions": "Shipment Received at Facility", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T15:39:26.058", "Instructions": "Added to Bag", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T16:16:54.713", "Instructions": "Bag Added To Trip", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-18T18:43:09.6", "Instructions": "Vehicle Departed", "Scanned Location": "Dehradun_Badowala_H (Uttarakhand)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T01:27:42.029", "Instructions": "Trip Arrived", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T03:39:48.655", "Instructions": "Bag Received at Facility", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T04:41:17", "Instructions": "System weight captured", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T04:41:17", "Instructions": "Shipment Received at Facility", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T11:58:28.779", "Instructions": "Added to Bag", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-19T23:29:57.837", "Instructions": "Bag Added To Trip", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T01:56:43.753", "Instructions": "Vehicle Departed", "Scanned Location": "Noida_Bairangpur_GW (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T02:50:50.556", "Instructions": "Trip Arrived", "Scanned Location": "Noida_Sector63D_I (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T03:14:17.168", "Instructions": "Bag Received at Facility", "Scanned Location": "Noida_Sector63D_I (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T05:07:09.939", "Instructions": "Outbound against permanent connection [custody scan]", "Scanned Location": "Noida_Sector63D_I (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T07:47:10.55", "Instructions": "Shipment Received at Facility", "Scanned Location": "Noida_Sector63D_D (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T08:20:36.897", "Instructions": "Out for delivery", "Scanned Location": "Noida_Sector63D_D (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T10:42:12.002", "Instructions": "Call placed to consignee", "Scanned Location": "Noida_Sector63D_D (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T10:45:12.174", "Instructions": "Paid through link", "Scanned Location": "Noida_Sector63D_D (Uttar Pradesh)" } },
+                        { "ScanDetail": { "ScanDateTime": "2025-05-20T10:45:25.002", "Instructions": "Delivered to consignee", "Scanned Location": "Noida_Sector63D_D (Uttar Pradesh)" } }
+                      ],
+                      status: {
+                        "Status": "Delivered",
+                        "StatusLocation": "Noida_Sector63D_D (Uttar Pradesh)",
+                        "StatusDateTime": "2025-05-20T10:45:25.002",
+                        "RecievedBy": "",
+                        "StatusCode": "EOD-38",
+                        "StatusType": "DL",
+                        "Instructions": "Delivered to consignee"
+                      },
+                    },
+                  });
+                } else {
+                  return {
+                    success: false,
+                    message: 'Order not found or invalid ID.',
+                  };
+                }
+              }, 1500)); // Simulate 1.5 seconds network delay
+              // --- End of Simulated API Response ---
+
+              const result = simulatedResult; // Use the simulated result for now
+
+              if (!result.success) {
+                setError(result.message || 'Failed to track shipment');
+                return;
+              }
+
+              const trackingData = result.data;
+              setTrackingReport(trackingData["tracking Report"] || []);
+              setStatus(trackingData.status || {});
+            } catch (err) {
+              console.error('Tracking error:', err);
+              setError('Something went wrong while tracking the shipment.');
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          return (
+            <div className="bg-white rounded-lg shadow-xl p-8 max-w-4xl w-full mx-auto flex flex-col md:flex-row gap-8">
+              {/* Left Column for Tracking Input and Status */}
+              <div className="flex-1">
+                <h2 className="text-3xl font-extrabold text-gray-900 mb-6 text-center md:text-left">Shipment Tracker</h2>
+
+                <div className="mb-6">
+                  <label htmlFor="orderId" className="block text-sm font-medium text-gray-700 mb-2">Order ID (from localStorage)</label>
+                  <input
+                    type="text"
+                    id="orderId"
+                    value={localStorage.getItem('pId') || ''}
+                    readOnly
+                    className="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+                    placeholder="Order ID will appear here..."
+                  />
+                  <p className="mt-2 text-sm text-gray-500">This value is retrieved from `localStorage.getItem('pId')`.</p>
+                </div>
+
+                <button
+                  onClick={handleTrackShipment}
+                  className="w-full text-white font-bold py-3 px-4 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                  style={{ backgroundColor: colors.primaryBlue, '--tw-ring-color': colors.primaryBlue }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Tracking...
+                    </div>
+                  ) : (
+                    'Track Shipment'
+                  )}
+                </button>
+
+                {error && (
+                  <div className="mt-4 p-3 border rounded-md" role="alert" style={{ backgroundColor: colors.errorRedBg, borderColor: colors.errorRedBorder, color: colors.errorRed }}>
+                    <p className="font-semibold">Error:</p>
+                    <p>{error}</p>
+                  </div>
+                )}
+
+                {status && (
+                  <div className="mt-6 p-4 rounded-lg shadow-inner" style={{ backgroundColor: colors.lightBlue }}>
+                    <h3 className="text-xl font-semibold text-blue-800 mb-2">Shipment Status</h3>
+                    <p className="text-gray-800"><span className="font-medium">Current Status:</span> {status.Status}</p>
+                    <p className="text-gray-800"><span className="font-medium">Location:</span> {status.StatusLocation}</p>
+                    <p className="text-gray-800"><span className="font-medium">Last Update:</span> {new Date(status.StatusDateTime).toLocaleString()}</p>
+                    <p className="text-gray-800"><span className="font-medium">Instructions:</span> {status.Instructions}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column for Tracking Report */}
+              <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-200 pt-8 md:pt-0 md:pl-8">
+                {/* Render the TrackingTimeline component here */}
+                <TrackingTimeline trackingReport={trackingReport} />
+              </div>
+            </div>
+          );
+        }
+
+        // Render the App component into the root div
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

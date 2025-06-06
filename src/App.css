@@ -1,42 +1,316 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* src/DeliveryStatusCard.css */
+
+body {
+  margin: 0;
+  background-color: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden; 
+}
+
+
+.delivery-card-outer-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 100vh;
+  overflow-y: auto; 
+}
+
+.order-input-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.order-id-input {
+  flex-grow: 1;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.order-id-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.track-button {
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.track-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.track-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Initial message style */
+.initial-message {
+  padding: 30px;
   text-align: center;
+  color: #666;
+  font-size: 18px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 400px; 
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+
+
+.delivery-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; 
+  width: 100%;
+  padding: 0; 
+  box-sizing: border-box;
+  overflow-y: unset; 
+  max-height: unset; 
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.delivery-card {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px; 
+  overflow: hidden; 
+  position: relative;
+  display: flex; 
+  flex-direction: column; 
+  max-height: calc(100vh - 120px); 
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.delivery-header {
+  flex-shrink: 0; 
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #eee;
+  position: relative;
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
   color: #888;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: #f0f0f0;
+}
+
+.delivery-status-text {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.delivery-main-status {
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+}
+
+.status-highlight {
+  color: #007bff; 
+}
+
+.map-placeholder {
+  flex-shrink: 0; 
+  width: 100%;
+  height: 150px; 
+  background-color: #e0e0e0; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #666;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.shipping-info {
+  flex-shrink: 0; 
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shipping-id-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.shipping-id-value {
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+}
+
+
+.tracking-timeline {
+  padding: 20px;
+  flex-grow: 1; 
+  overflow-y: auto; 
+}
+
+
+.tracking-timeline::-webkit-scrollbar {
+  width: 8px; 
+}
+
+.tracking-timeline::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 10px;
+}
+
+.tracking-timeline::-webkit-scrollbar-thumb {
+  background-color: #888; 
+  border-radius: 10px; 
+  border: 2px solid #f1f1f1; 
+}
+
+.tracking-timeline::-webkit-scrollbar-thumb:hover {
+  background-color: #555; 
+}
+
+
+.timeline-item {
+  display: flex;
+  margin-bottom: 20px; 
+  position: relative;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-date-time {
+  flex-shrink: 0; 
+  width: 100px; 
+  margin-right: 15px;
+  font-size: 13px;
+  color: #555;
+  text-align: right;
+  padding-top: 2px; 
+}
+
+.timeline-dot-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 15px;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  background-color: #28a745; 
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 1; 
+}
+
+.timeline-line {
+  width: 2px;
+  background-color: #e0e0e0; 
+  flex-grow: 1; 
+  margin-top: 5px; 
+  margin-bottom: -25px; 
+}
+
+.timeline-item:last-child .timeline-line {
+  display: none;
+}
+
+.timeline-details {
+  flex-grow: 1;
+}
+
+.timeline-instruction {
+  font-weight: bold;
+  color: #333;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+
+.timeline-location {
+  font-size: 13px;
+  color: #777;
+}
+
+.loading-state, .error-state, .no-data-state {
+  padding: 50px 20px;
+  text-align: center;
+  color: #555;
+  font-size: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  width: 100%;
+  max-width: 400px; 
+}
+
+.error-state {
+  color: #dc3545; 
+}
+
+
+@media (max-width: 600px) {
+  .delivery-card-outer-wrapper {
+    padding: 10px;
+  }
+  .order-input-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .track-button {
+    width: 100%;
+  }
+
+  .delivery-card {
+    border-radius: 0; 
+    max-height: calc(100vh - 100px); 
+  }
+
+  .close-button {
+    top: 10px;
+    right: 10px;
+  }
 }
